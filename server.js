@@ -8,9 +8,13 @@ app.use(express.json());
 
 const EMAIL = process.env.OFFICIAL_EMAIL;
 
-/* -------------------- ROOT ROUTE (OPTIONAL BUT USEFUL) -------------------- */
+/* -------------------- ROOT ROUTE -------------------- */
 app.get("/", (req, res) => {
-  res.status(200).send("API is running");
+  res.status(200).json({
+    message: "API is running",
+    health: "/health",
+    endpoint: "/bfhl"
+  });
 });
 
 /* -------------------- Utility Functions -------------------- */
@@ -132,7 +136,7 @@ app.post("/bfhl", async (req, res) => {
       const text =
         geminiResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-      // Single-word response as required
+      // Single-word response
       result = text.trim().split(/\s+/)[0] || "Unknown";
     }
 
