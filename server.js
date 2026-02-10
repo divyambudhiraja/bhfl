@@ -3,6 +3,7 @@ import axios from "axios";
 import dotenv from "dotenv";
 
 dotenv.config();
+
 const app = express();
 app.use(express.json());
 
@@ -13,11 +14,11 @@ app.get("/", (req, res) => {
   res.status(200).json({
     message: "API is running",
     health: "/health",
-    endpoint: "/bfhl"
+    bfhl: "/bfhl"
   });
 });
 
-/* -------------------- Utility Functions -------------------- */
+/* -------------------- UTILITY FUNCTIONS -------------------- */
 
 const isPrime = (n) => {
   if (n < 2) return false;
@@ -28,7 +29,7 @@ const isPrime = (n) => {
 };
 
 const gcd = (a, b) => (b === 0 ? a : gcd(b, a % b));
-const lcm = (a, b) => (a * b) / gcd(a, b);
+const lcmTwo = (a, b) => (a * b) / gcd(a, b);
 
 /* -------------------- HEALTH CHECK -------------------- */
 
@@ -39,13 +40,13 @@ app.get("/health", (req, res) => {
   });
 });
 
-/* -------------------- MAIN API -------------------- */
+/* -------------------- BFHL API -------------------- */
 
 app.post("/bfhl", async (req, res) => {
   try {
     const keys = Object.keys(req.body);
 
-    // Must contain exactly ONE key
+    // Exactly one key required
     if (keys.length !== 1) {
       return res.status(400).json({
         is_success: false,
@@ -55,7 +56,7 @@ app.post("/bfhl", async (req, res) => {
 
     const key = keys[0];
     const value = req.body[key];
-    let result;
+    let data;
 
     /* ---------- Fibonacci ---------- */
     if (key === "fibonacci") {
@@ -66,13 +67,12 @@ app.post("/bfhl", async (req, res) => {
         });
       }
 
-      let fib = [];
       let a = 0, b = 1;
+      data = [];
       for (let i = 0; i < value; i++) {
-        fib.push(a);
+        data.push(a);
         [a, b] = [b, a + b];
       }
-      result = fib;
     }
 
     /* ---------- Prime ---------- */
@@ -84,9 +84,7 @@ app.post("/bfhl", async (req, res) => {
         });
       }
 
-      result = value.filter(
-        (n) => Number.isInteger(n) && isPrime(n)
-      );
+      data = value.filter(n => Number.isInteger(n) && isPrime(n));
     }
 
     /* ---------- LCM ---------- */
@@ -98,7 +96,7 @@ app.post("/bfhl", async (req, res) => {
         });
       }
 
-      result = value.reduce((acc, num) => lcm(acc, num));
+      data = value.reduce((acc, num) => lcmTwo(acc, num));
     }
 
     /* ---------- HCF ---------- */
@@ -110,19 +108,19 @@ app.post("/bfhl", async (req, res) => {
         });
       }
 
-      result = value.reduce((acc, num) => gcd(acc, num));
+      data = value.reduce((acc, num) => gcd(acc, num));
     }
 
     /* ---------- AI ---------- */
     else if (key === "AI") {
-      if (typeof value !== "string" || value.trim().length === 0) {
+      if (typeof value !== "string" || value.trim() === "") {
         return res.status(400).json({
           is_success: false,
           error: "AI requires a non-empty question string"
         });
       }
 
-      const geminiResponse = await axios.post(
+      const aiResponse = await axios.post(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
         {
           contents: [
@@ -134,10 +132,10 @@ app.post("/bfhl", async (req, res) => {
       );
 
       const text =
-        geminiResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        aiResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-      // Single-word response
-      result = text.trim().split(/\s+/)[0] || "Unknown";
+      // single-word response
+      data = text.trim().split(/\s+/)[0] || "Unknown";
     }
 
     /* ---------- Invalid Key ---------- */
@@ -148,11 +146,11 @@ app.post("/bfhl", async (req, res) => {
       });
     }
 
-    /* ---------- SUCCESS ---------- */
+    /* ---------- SUCCESS RESPONSE ---------- */
     return res.status(200).json({
       is_success: true,
       official_email: EMAIL,
-      data: result
+      data
     });
 
   } catch (err) {
