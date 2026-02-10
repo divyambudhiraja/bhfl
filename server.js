@@ -8,6 +8,11 @@ app.use(express.json());
 
 const EMAIL = process.env.OFFICIAL_EMAIL;
 
+/* -------------------- ROOT ROUTE (OPTIONAL BUT USEFUL) -------------------- */
+app.get("/", (req, res) => {
+  res.status(200).send("API is running");
+});
+
 /* -------------------- Utility Functions -------------------- */
 
 const isPrime = (n) => {
